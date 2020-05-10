@@ -10,23 +10,27 @@ from keras.layers.core import Dense, Dropout
 from keras.layers.normalization import BatchNormalization
 from keras.utils import np_utils
 import numpy as np
-
+import utils
 
 class DNN:  
     
     def __init__(self, n_input_nodes, n_hidden_nodes, n_output_nodes, 
                  batch_normalization, dropout, dropout_ratio=0.3):
         """
-        
 
         Parameters
         ----------
         n_input_nodes : int
+        
         n_hidden_nodes : list of ints
             number of nodes per hidden layer.
+        
         n_output_nodes : int
+        
         batch_normalization : boolean
+        
         dropout : boolean
+        
         dropout_ratio : float, the default is 0.3.
 
         Raises
@@ -58,6 +62,7 @@ class DNN:
         
 
     def create_NN(self):     
+        
         self.model = Sequential()
         
         self.model.add(Dense(self.n_hidden_nodes[0], input_dim=self.n_input_nodes, 
@@ -90,28 +95,25 @@ class DNN:
               batch_size, n_epochs, verbose=1):
         """
         
-
         Parameters
         ----------
-        features_train : TYPE
-            DESCRIPTION.
-        targets_train : TYPE
-            DESCRIPTION.
-        features_val : TYPE
-            DESCRIPTION.
-        targets_val : TYPE
-            DESCRIPTION.
-        batch_size : int
-            DESCRIPTION.
-        n_epochs : int
-            DESCRIPTION.
-        verbose : int, optional
-            DESCRIPTION. The default is 1.
+        features_train : numpy shape=(n_samples_train, self.n_input_nodes)
+
+        targets_train : numpy shape=(n_samples_train, self.n_output_nodes)
+            
+        features_val : numpy shape=(n_samples_val, self.n_input_nodes)
+        
+        targets_val : numpy shape=(n_samples_val, self.n_output_nodes)
+        
+        batch_size : int      
+        
+        n_epochs : int       
+        
+        verbose : int, the default is 1.
 
         Returns
         -------
         model_info : TYPE
-            DESCRIPTION.
 
         """
         model_info = self.model.fit(features_train, targets_train, batch_size=batch_size,  
@@ -124,38 +126,70 @@ class DNN:
 
     def get_proba(self, features, n_frames_utterance): 
         """
+
         Parameters
         ----------
-        features : TYPE
-            DESCRIPTION.
-        targets : TYPE
-            DESCRIPTION.
-        n_frames_utterance: int
+        features : numpy shape=(n_samples, self.n_input_nodes)
+
+        n_frames_utterance : int
+            Number of frames per utterance.
+
+        Raises
+        ------
+        ValueError
+            If there are more frames than expected in features.
 
         Returns
         -------
-        None.
-
+        proba_utterances: numpy shape=(n_utterances, self.n_output_nodes)
+            Average of the logarithm of the sotmax values of frames per utterance.
+            
         """
         n_samples = features.shape[1]
         n_utterances = n_samples/n_frames_utterance
         
-        if type(n_utterances)!=int:
+        proba_utterances = np.array((n_utterances, self.n_output_nodes)) # probabilities of each utterance to belong to each class
+        
+        if type(n_utterances) != int:
             raise ValueError("More frames that expected in the features matrix")
         
+        sotmax_scores = self.model.predict_proba(features)
+        
+        # Do average logarithm of the sotmax scores of each utterance
         for idx_utterance in range(n_utterances):
+            idx_start_frames = idx_utterance * n_frames_utterance
+            idx_end_frames = (idx_utterance+1) * n_frames_utterance
+            utterance_frames = features[idx_start_frames:idx_end_frames]
+            proba_utterances[idx_utterance] = utils.avg_log_scores(utterance_frames)
             
-    
-    def get_classes(self, features, targets, n_frames_utterance):
-        self.get_proba()
-        # give the max 
+        return proba_utterances
     
     
+    def get_classes(self, features, n_frames_utterance):
+        """
+        Get network class prediction for each utterance.
+        
+        Parameters
+        ----------
+        features : numpy shape=(n_samples, self.n_input_nodes) 
+
+        n_frames_utterance : int
+            Number of frames per utterance.
+
+        Returns
+        -------
+        utterances_classes: numpy shape=(n_utterances,).
+        """
+        proba_utterances = self.get_proba(features, n_frames_utterance)
+        utterances_classes = np.argmax(proba_utterances, axis=1)
+        return utterances_classes
+
 
 def __name__ == "__main__":
     
     ## Add context and prepare data so DNN accepts it 
     
+    ## Create fake data to test that everything is working 
     n_input_nodes=13
     n_output_nodes=5
     
