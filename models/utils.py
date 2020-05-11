@@ -11,16 +11,16 @@ def avg_log_scores(scores):
     """
     Parameters
     ----------
-    scores : TYPE
-        DESCRIPTION.
-
+    scores : numpy shape=(n_frames, n_classes)
+        softmax scores of the frames of one utterance 
+        
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    numpy shape=(n_classes,)
+        average of the logarithm of the scores for the utterance
 
     """
-    return np.mean(np.log(scores))
+    return np.mean(np.log(scores), axis=1)
 
 
 def generate_fake_data(n_utterances=3, n_frames_utterance=10, n_features=10, 
@@ -38,7 +38,7 @@ def generate_fake_data(n_utterances=3, n_frames_utterance=10, n_features=10,
     
     n_utt_other_class: int
         number of utterances of class 1
-        
+
     Returns
     -------
     fake_features : numpy shape=(n_utterances * n_frames_utterance, n_features)

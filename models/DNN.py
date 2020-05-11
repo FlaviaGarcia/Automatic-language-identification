@@ -91,7 +91,7 @@ class DNN:
                            metrics = ['accuracy'])  ## not sure about this   
         
 
-    def train(features_train, targets_train, features_val, targets_val, 
+    def train(self, features_train, targets_train, features_val, targets_val, 
               batch_size, n_epochs, verbose=1):
         """
         
@@ -159,8 +159,8 @@ class DNN:
         for idx_utterance in range(n_utterances):
             idx_start_frames = idx_utterance * n_frames_utterance
             idx_end_frames = (idx_utterance+1) * n_frames_utterance
-            utterance_frames = features[idx_start_frames:idx_end_frames]
-            proba_utterances[idx_utterance] = utils.avg_log_scores(utterance_frames)
+            avg_scores_utterance = sotmax_scores[idx_start_frames:idx_end_frames]
+            proba_utterances[idx_utterance] = utils.avg_log_scores(avg_scores_utterance)
             
         return proba_utterances
     
@@ -185,11 +185,15 @@ class DNN:
         return utterances_classes
 
 
-def __name__ == "__main__":
+if __name__ == "__main__":
     
     ## Add context and prepare data so DNN accepts it 
     
     ## Create fake data to test that everything is working 
+    
+    """
+    
+    
     n_input_nodes=13
     n_output_nodes=5
     
@@ -206,5 +210,5 @@ def __name__ == "__main__":
               batch_size, n_epochs)
     
     dnn.get_scores(features_test)
-    
+    """
     
