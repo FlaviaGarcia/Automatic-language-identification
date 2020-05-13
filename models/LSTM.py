@@ -1,32 +1,39 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun May 10 17:00:55 2020
+Created on Mon May 11 11:51:17 2020
 
-@author: FlaviaGV
+@author: matte
 """
 
-from keras.models import Sequential
-from keras.layers.core import Dense, LSTM
-from keras.layers.normalization import BatchNormalization
-from keras.utils import np_utils
 import numpy as np
-import utils
+import pandas as pd
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from sklearn.model_selection import train_test_split
+from keras.utils import to_categorical
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Embedding, LSTM, GlobalMaxPooling1D, SpatialDropout1D, Input
+from utils import generate_fake_data
 
-class LSTM:  
-    
-    def __init__(self, n_memory_cells):
-        self.n_memory_cells = n_memory_cells
-        self.output_activation_func = "softmax"
-        self.optimizer_method = "adam"
-    
-    def create_NN(self):   
-        pass
-    
-    
-    def train(self, features_train, targets_train, features_val, targets_val, 
-              batch_size, n_epochs, verbose=1):
-        pass 
-    
-"""
-n_memory_cells = 512
-"""    
+batch_size = 512
+epochs = 8
+
+
+model_lstm = Sequential()
+#model_lstm.add(Embedding(10, 512, input_length=10))
+model_lstm.add(LSTM(10))
+model_lstm.add(Dense(2, activation = 'softmax'))
+model_lstm.compile(
+    loss='categorical_crossentropy',
+    optimizer='Adam',
+    metrics=['accuracy']
+)
+
+X_train, y_train = generate_fake_data()
+y_train = to_categorical(y_train, 2)
+history = model_lstm.fit(
+    X_train,
+    y_train,
+    epochs = 8,
+    batch_size = 1
+)
