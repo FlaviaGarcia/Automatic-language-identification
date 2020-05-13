@@ -2,7 +2,7 @@
 """
 Created on Sun May 10 19:21:25 2020
 
-@author: FlaviaGV
+@author: FlaviaGV, MatteoDM, CarlesBR, TheodorosPP
 """
 
 import numpy as np 
@@ -20,7 +20,7 @@ def avg_log_scores(scores):
         average of the logarithm of the scores for the utterance
 
     """
-    return np.mean(np.log(scores), axis=1)
+    return np.mean(np.log(scores), axis=0)
 
 
 def generate_fake_data(n_utterances=3, n_frames_utterance=10, n_features=10, 

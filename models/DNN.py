@@ -2,15 +2,16 @@
 """
 Created on Sun May 10 17:00:55 2020
 
-@author: FlaviaGV
+@author: FlaviaGV, MatteoDM, CarlesBR, TheodorosPP
 """
 
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout
-from keras.layers.normalization import BatchNormalization
-from keras.utils import np_utils
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import BatchNormalization
 import numpy as np
-import utils
+from models import utils
+
 
 class DNN:  
     
@@ -124,7 +125,7 @@ class DNN:
     
 
 
-    def get_proba(self, features, n_frames_utterance): 
+    def get_scores(self, features, n_frames_utterance): 
         """
 
         Parameters
@@ -145,13 +146,15 @@ class DNN:
             Average of the logarithm of the sotmax values of frames per utterance.
             
         """
-        n_samples = features.shape[1]
-        n_utterances = n_samples/n_frames_utterance
+        n_samples = features.shape[0]
         
-        proba_utterances = np.array((n_utterances, self.n_output_nodes)) # probabilities of each utterance to belong to each class
-        
-        if type(n_utterances) != int:
+        if n_samples%n_frames_utterance != 0:
             raise ValueError("More frames that expected in the features matrix")
+        
+        n_utterances = n_samples//n_frames_utterance
+        
+        proba_utterances = np.zeros((n_utterances, self.n_output_nodes)) # probabilities of each utterance to belong to each class
+        
         
         sotmax_scores = self.model.predict_proba(features)
         
@@ -159,8 +162,8 @@ class DNN:
         for idx_utterance in range(n_utterances):
             idx_start_frames = idx_utterance * n_frames_utterance
             idx_end_frames = (idx_utterance+1) * n_frames_utterance
-            avg_scores_utterance = sotmax_scores[idx_start_frames:idx_end_frames]
-            proba_utterances[idx_utterance] = utils.avg_log_scores(avg_scores_utterance)
+            softmax_scores_utterance = sotmax_scores[idx_start_frames:idx_end_frames]
+            proba_utterances[idx_utterance] = utils.avg_log_scores(softmax_scores_utterance)
             
         return proba_utterances
     
@@ -180,35 +183,8 @@ class DNN:
         -------
         utterances_classes: numpy shape=(n_utterances,).
         """
-        proba_utterances = self.get_proba(features, n_frames_utterance)
+        proba_utterances = self.get_scores(features, n_frames_utterance)
         utterances_classes = np.argmax(proba_utterances, axis=1)
         return utterances_classes
 
-
-if __name__ == "__main__":
-    
-    ## Add context and prepare data so DNN accepts it 
-    
-    ## Create fake data to test that everything is working 
-    
-    """
-    
-    
-    n_input_nodes=13
-    n_output_nodes=5
-    
-    n_hidden_nodes=[2560]
-     
-    batch_normalization=False
-    dropout=False
-    mini_batch=200 
-    
-    dnn = DNN(n_input_nodes, n_hidden_nodes, n_output_nodes, 
-                 batch_normalization, dropout)
-    
-    dnn.train(features_train, targets_train, features_val, targets_val, 
-              batch_size, n_epochs)
-    
-    dnn.get_scores(features_test)
-    """
     
