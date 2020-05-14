@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May 14 11:41:06 2020
+
+@author: FlaviaGV, MatteoDM, CarlesBR, TheodorosPP
+"""
+import sys
+sys.path.append("..")
+
 from models.DNN import DNN
 from models import utils
 from tensorflow.keras.utils import to_categorical
@@ -7,7 +16,8 @@ from tensorflow.keras.utils import to_categorical
 
 ## Create fake data to test that everything is working 
 n_frames_utterance = 10 
-fake_features, fake_targets = utils.generate_fake_data(n_utterances=10,n_frames_utterance=n_frames_utterance)
+fake_features, fake_targets = utils.generate_fake_data(n_utterances=10,
+                                                       n_frames_utterance=n_frames_utterance)
 fake_targets_categ = to_categorical(fake_targets)
 
 x_train = fake_features[:70]
@@ -32,6 +42,6 @@ dnn = DNN(n_input_nodes, n_hidden_nodes, n_output_nodes,
 
 dnn.train(x_train, y_train, x_val, y_val, batch_size, n_epochs)
 
-scores = dnn.get_scores(x_test, n_frames_utterance)
+scores = dnn.predict_proba(x_test, n_frames_utterance)
 
-classes = dnn.get_classes(x_test, n_frames_utterance)
+classes = dnn.predict_classes(x_test, n_frames_utterance)

@@ -5,18 +5,16 @@ Created on Sun May 10 17:00:55 2020
 @author: FlaviaGV, MatteoDM, CarlesBR, TheodorosPP
 """
 
-
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import BatchNormalization
 import numpy as np
 from models import utils
 
-
 class DNN:  
     
     def __init__(self, n_input_nodes, n_hidden_nodes, n_output_nodes, 
-                 batch_normalization, dropout, dropout_ratio=0.3):
+                 batch_normalization, dropout_rate=0.0):
         """
 
         Parameters
@@ -29,10 +27,8 @@ class DNN:
         n_output_nodes : int
         
         batch_normalization : boolean
-        
-        dropout : boolean
-        
-        dropout_ratio : float, the default is 0.3.
+                
+        dropout_rate : float, the default is 0.0. This means that no dropout is applied. 
 
         Raises
         ------
@@ -51,8 +47,7 @@ class DNN:
 
         self.n_output_nodes = n_output_nodes
         self.batch_normalization = batch_normalization
-        self.dropout = dropout
-        self.dropout_ratio = dropout_ratio
+        self.dropout_rate = dropout_rate
 
         self.activation_func = "relu"
         self.output_activation_func = "softmax"
@@ -68,8 +63,8 @@ class DNN:
         
         self.model.add(Dense(self.n_hidden_nodes[0], input_dim=self.n_input_nodes, 
                         activation=self.activation_func))
-        if self.dropout:
-            self.model.add(Dropout(self.dropout_ratio))
+
+        self.model.add(Dropout(self.dropout_rate))
         
         for idx_hidden in range(1, self.n_hidden_layers):
             if self.batch_normalization:
@@ -78,8 +73,7 @@ class DNN:
             self.model.add(Dense(self.n_hidden_nodes[idx_hidden], 
                                  activation=self.activation_func))
             
-            if self.dropout:
-                self.model.add(Dropout(self.dropout_ratio))
+            self.model.add(Dropout(self.dropout_rate))
             
         if self.batch_normalization:
             self.model.add(BatchNormalization())
@@ -125,7 +119,7 @@ class DNN:
     
 
 
-    def get_scores(self, features, n_frames_utterance): 
+    def predict_proba(self, features, n_frames_utterance): 
         """
 
         Parameters
@@ -168,7 +162,7 @@ class DNN:
         return proba_utterances
     
     
-    def get_classes(self, features, n_frames_utterance):
+    def predict_classes(self, features, n_frames_utterance):
         """
         Get network class prediction for each utterance.
         
@@ -183,7 +177,7 @@ class DNN:
         -------
         utterances_classes: numpy shape=(n_utterances,).
         """
-        proba_utterances = self.get_scores(features, n_frames_utterance)
+        proba_utterances = self.predict_proba(features, n_frames_utterance)
         utterances_classes = np.argmax(proba_utterances, axis=1)
         return utterances_classes
 
