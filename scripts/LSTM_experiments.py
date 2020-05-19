@@ -10,7 +10,7 @@ sys.path.append("..")
 
 from tensorflow.keras.utils import to_categorical
 from models import utils
-from models.LSTM import LSTMSpeech
+from models.LSTMSpeech import LSTMSpeech
 
 n_frames_utterance = 10 
 

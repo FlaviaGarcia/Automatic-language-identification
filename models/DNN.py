@@ -83,7 +83,7 @@ class DNN:
     
         self.model.compile(loss = self.loss, 
                            optimizer = self.optimizer_method, 
-                           metrics = ['accuracy'])  ## not sure about this   
+                           metrics = ['accuracy'])
         
 
     def train(self, features_train, targets_train, features_val, targets_val, 
