@@ -1,11 +1,10 @@
-import keras
 import os
-from sidekit.frontend.features import compute_delta, plp
 import librosa
-import sidekit
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 import tensorflow_io as tfio
+from tensorflow import keras
 
 class DataGenerator(keras.utils.Sequence):
 
@@ -14,16 +13,16 @@ class DataGenerator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.root_path = root_path
         self.shuffle = shuffle
-        self.on_epoch_end()
         self.list_dir = []
+        self.on_epoch_end()
         self.dim = (128, 79)
         self.n_channels = 1
         targets = os.listdir(self.root_path)
-        self.n_classes
         self.target_to_class = {lang: i for i, lang in enumerate(targets)}
+        self.n_classes = len(self.target_to_class)
         i = 0
-        for target in target:
-            target_path = os.path.join(os.path.join(self.root_path, 'clips_cut'), target)
+        for target in targets:
+            target_path = os.path.join(os.path.join(self.root_path, target), 'clips_cut/')
             for path in os.listdir(target_path):
                 item_path = os.path.join(target_path, path)
                 self.list_dir.append(item_path)
@@ -45,7 +44,7 @@ class DataGenerator(keras.utils.Sequence):
         indexes = self.indexes[index]
         list_dirs_temp = [self.list_dir[k] for k in indexes]
         # Generate data
-        X, y = self.__data_generation(indexesm list_dirs_temp)
+        X, y = self.__data_generation(list_dirs_temp)
 
         return X, y
 
