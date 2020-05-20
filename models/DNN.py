@@ -142,7 +142,7 @@ class DNN:
         """
         n_samples = features.shape[0]
         
-        if n_samples%n_frames_utterance != 0:
+        if n_samples % n_frames_utterance != 0:
             raise ValueError("More frames that expected in the features matrix")
         
         n_utterances = n_samples//n_frames_utterance

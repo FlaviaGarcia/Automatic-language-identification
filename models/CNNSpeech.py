@@ -75,22 +75,16 @@ class CNNSpeech:
     def train(self, features_train, targets_train, features_val, targets_val,
               batch_size, n_epochs, verbose=1):
 
-        features_train, targets_train = self.convert_data(features_train, targets_train)
-        features_val, targets_val = self.convert_data(features_val, targets_val)
-
         model_info = self.model.fit(features_train, targets_train, batch_size=batch_size,
                                     validation_data=(features_val, targets_val),
                                     verbose=verbose, epochs=n_epochs)
 
         return model_info
 
-    def predict_classes(self):
-        """ Majority vote of the classes """
-        pass
 
 
 """
-input_dims = (20,40,1)
+input_dims = (x,x,1)
 pool_size_2d = 5
 divide_pool_size_1d = 4
 filters_size = [5, 5]
