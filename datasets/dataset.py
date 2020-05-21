@@ -14,7 +14,6 @@ class DataGenerator(keras.utils.Sequence):
         self.root_path = root_path
         self.shuffle = shuffle
         self.list_dir = []
-        self.on_epoch_end()
         self.dim = (128, 79)
         self.n_channels = 1
         targets = os.listdir(self.root_path)
@@ -24,12 +23,14 @@ class DataGenerator(keras.utils.Sequence):
         for target in targets:
             target_path = os.path.join(os.path.join(self.root_path, target), 'clips_cut/')
             for path in os.listdir(target_path):
-                item_path = os.path.join(target_path, path)
-                self.list_dir.append(item_path)
+                if (not path.startswith('.')):
+                    item_path = os.path.join(target_path, path)
+                    self.list_dir.append(item_path)
                 
             i += 1
 
         self.n_classes = len(targets)
+        self.on_epoch_end()
 
 
 
@@ -39,9 +40,8 @@ class DataGenerator(keras.utils.Sequence):
 
     def __getitem__(self, index):
         
-        raise Exception('Not implemented')
         # Generate indexes of the batch
-        indexes = self.indexes[index]
+        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
         list_dirs_temp = [self.list_dir[k] for k in indexes]
         # Generate data
         X, y = self.__data_generation(list_dirs_temp)
@@ -61,12 +61,11 @@ class DataGenerator(keras.utils.Sequence):
         y = np.empty((self.batch_size), dtype=int)
 
         # Generate data
-        for i, item_path in enumerate(list_IDs_temp):
+        for i, item_path in enumerate(list_dirs_temp):
             # Store sample
-            
             audio_binary = tf.io.read_file(item_path)
-            waveform = tfio.audio.decode_mp3(audio_binary).numpy().reshape(-1)
-            mel = librosa.feature.melspectrogram(y, sr=16000)
+            waveform, sr = librosa.load(item_path, sr=16000)
+            mel = librosa.feature.melspectrogram(waveform, sr=sr)
             ps_db = librosa.power_to_db(mel, ref=np.max).reshape((*self.dim, 1))
             X[i,] = ps_db
             # Store class
