@@ -45,6 +45,3 @@ lstm.train(x_train, y_train, x_val, y_val, batch_size, n_epochs)
 scores = lstm.predict_proba(x_test)
 
 classes = lstm.predict_classes(x_test)
-
-
-
