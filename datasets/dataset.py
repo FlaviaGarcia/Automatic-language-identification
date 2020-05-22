@@ -135,7 +135,7 @@ class DataGenerator(keras.utils.Sequence):
         y = self.target_to_class[label]
         target = np.zeros((self.dim[0], self.n_classes))
         target[:,y] = 1
-        return feat.reshape(1,*X.shape), target
+        return feat.reshape(1,*feat.shape), target
 
     
 class DataTfLoader:
