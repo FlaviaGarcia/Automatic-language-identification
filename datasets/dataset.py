@@ -56,6 +56,8 @@ class DataGenerator(keras.utils.Sequence):
             X, y = self.__data_generation_cnn(list_dirs_temp)
         elif (self.net == 'dnn'):
             X, y = self.__data_generation_dnn(self.list_dir[self.indexes[index]])
+        elif (self.net == 'lstm'):
+            X, y = self.__data_generation_lstm(self.list_dir[self.indexes[index]])
 
         return X, y
 
@@ -117,6 +119,23 @@ class DataGenerator(keras.utils.Sequence):
         target = keras.utils.to_categorical(self.target_to_class[label], num_classes=self.n_classes)
         target = np.repeat(target.reshape((1,-1)),repeats=self.batch_size, axis=0)
         return X, target
+
+    def __data_generation_lstm(self, item_path):
+        # Generate data
+        waveform, sr = sf.read(item_path)
+        if self.feat=='mfcc':
+            feat_item = mfcc(waveform+1e-9, maxfreq=sr/2.0)[0]
+        else:
+            feat_item = plp(waveform+1e-9, fs=sr, rasta=False)[0]
+        feat_delta1 = compute_delta(feat_item)
+        feat_delta2 = compute_delta(feat_delta1)
+        feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1)
+        # Store class
+        label = item_path.split('/')[-3]
+        y = self.target_to_class[label]
+        target = np.zeros((self.dim[0], self.n_classes))
+        target[:,y] = 1
+        return feat.reshape(1,*X.shape), target
 
     
 class DataTfLoader:
