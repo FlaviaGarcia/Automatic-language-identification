@@ -6,15 +6,20 @@ from tensorflow import keras
 import tensorflow_io as tfio
 from tensorflow import keras
 import soundfile as sf
+from sidekit.frontend.features import plp, compute_delta, mfcc
 
 class DataGenerator(keras.utils.Sequence):
 
-    def __init__(self, root_path, batch_size=32, shuffle=True):
+    def __init__(self, root_path, batch_size=32, shuffle=True, net='cnn', feat='melspec'):
 
         self.batch_size = batch_size
         self.root_path = root_path
         self.shuffle = shuffle
         self.list_dir = []
+        self.net = net
+        if self.net == 'dnn':
+            self.batch_size = 248
+        self.feat = feat
         self.dim = (128, 79)
         self.n_channels = 1
         targets = os.listdir(self.root_path)
@@ -44,10 +49,13 @@ class DataGenerator(keras.utils.Sequence):
     def __getitem__(self, index):
         
         # Generate indexes of the batch
-        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-        list_dirs_temp = [self.list_dir[k] for k in indexes]
-        # Generate data
-        X, y = self.__data_generation(list_dirs_temp)
+        if (self.net == 'cnn'):
+            indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
+            list_dirs_temp = [self.list_dir[k] for k in indexes]
+            # Generate data
+            X, y = self.__data_generation_cnn(list_dirs_temp)
+        elif (self.net == 'dnn'):
+            X, y = self.__data_generation_dnn(self.list_dir[self.indexes[index]])
 
         return X, y
 
@@ -57,7 +65,7 @@ class DataGenerator(keras.utils.Sequence):
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
 
-    def __data_generation(self, list_dirs_temp):
+    def __data_generation_cnn(self, list_dirs_temp):
 
         # Initialization
         X = np.empty((self.batch_size, *self.dim, self.n_channels))
@@ -81,6 +89,33 @@ class DataGenerator(keras.utils.Sequence):
             y[i] = self.target_to_class[label]
 
         target = keras.utils.to_categorical(y, num_classes=self.n_classes)
+        return X, target
+    
+    def __data_generation_dnn(self, item_path):
+
+        # Initialization
+        X = np.empty((self.batch_size, 39*21))
+
+        waveform, sr = sf.read(item_path)
+        if self.feat=='mfcc':
+            feat_item = mfcc(waveform+1e-9, maxfreq=sr/2.0)[0]
+        else:
+            feat_item = plp(waveform+1e-9, fs=sr, rasta=False)[0]
+        
+        feat_delta1 = compute_delta(feat_item)
+        feat_delta2 = compute_delta(feat_delta1)
+        feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1)
+        
+        mirror_feat = np.pad(feat, ((10,), (0,)), 'reflect')
+        frames = []
+        for i in range(10, mirror_feat.shape[0] - 10):
+            frames.append(np.reshape(mirror_feat[i-10:i+11,:], -1))
+        X = np.array(frames)
+        # Store class
+        label = item_path.split('/')[-3]
+        
+        target = keras.utils.to_categorical(self.target_to_class[label], num_classes=self.n_classes)
+        target = np.repeat(target.reshape((1,-1)),repeats=self.batch_size, axis=0)
         return X, target
 
     
