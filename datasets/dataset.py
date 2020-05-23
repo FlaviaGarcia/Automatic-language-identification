@@ -31,17 +31,23 @@ class DataGenerator(keras.utils.Sequence):
             target_path = os.path.join(os.path.join(self.root_path, target), 'clips_cut/')
             self.count[target] = 0
             for path in os.listdir(target_path):
-                self.count[target] += 1
                 if (not path.startswith('.')):
                     item_path = os.path.join(target_path, path)
                     self.list_dir.append(item_path)
+                    self.count[target] += 1
                 
             i += 1
 
         self.n_classes = len(targets)
         self.on_epoch_end()
 
-
+    def getTargets(self):
+        targets = []
+        for item_path in self.list_dir:
+            label = item_path.split('/')[-3]
+            targets.append(self.target_to_class[label])
+            
+        return np.array(targets)
 
     def __len__(self):
         return len(self.list_dir)//self.batch_size
