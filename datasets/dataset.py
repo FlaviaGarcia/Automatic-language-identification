@@ -3,8 +3,6 @@ import librosa
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-import tensorflow_io as tfio
-from tensorflow import keras
 import soundfile as sf
 from sidekit.frontend.features import plp, compute_delta, mfcc
 
