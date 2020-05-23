@@ -16,9 +16,15 @@ class DataGenerator(keras.utils.Sequence):
         self.list_dir = []
         self.net = net
         if self.net == 'dnn':
-            self.batch_size = 248
+            self.batch_size = 75
         self.feat = feat
-        self.dim = (128, 79)
+        if self.net == 'cnn':
+            self.dim = (128, 79)
+            if self.feat=='mfcc' or self.feat=='plp':
+                self.dim = (39, 75)
+            elif self.feat=='combined':
+                self.dim1 = (39, 75)
+                self.dim2 = (128, 79)
         self.n_channels = 1
         targets = os.listdir(self.root_path)
         self.target_to_class = {lang: i for i, lang in enumerate(targets)}
@@ -48,6 +54,8 @@ class DataGenerator(keras.utils.Sequence):
         return np.array(targets)
 
     def __len__(self):
+        if (self.net == 'dnn'):
+            return len(self.list_dir)
         return len(self.list_dir)//self.batch_size
 
     def __getitem__(self, index):
@@ -70,31 +78,54 @@ class DataGenerator(keras.utils.Sequence):
         self.indexes = np.arange(len(self.list_dir))
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
-
     def __data_generation_cnn(self, list_dirs_temp):
 
         # Initialization
-        X = np.empty((self.batch_size, *self.dim, self.n_channels))
         y = np.empty((self.batch_size), dtype=int)
+        if self.feat == 'combined':
+            X1 = np.empty((self.batch_size, *self.dim1, self.n_channels))
+            X2 = np.empty((self.batch_size, *self.dim2, self.n_channels))
+        else:
+            X = np.empty((self.batch_size, *self.dim, self.n_channels))
 
         # Generate data
         labels = []
         for i, item_path in enumerate(list_dirs_temp):
-            # Store sample
-#             sf is faster!!
-#             audio_binary = tf.io.read_file(item_path)
-#             waveform, sr = tf.audio.decode_wav(audio_binary)
-#             waveform = waveform.numpy().reshape(-1) # converting tensor to numpy
+
             waveform, sr = sf.read(item_path)
-            mel = librosa.feature.melspectrogram(waveform, sr=16000)
-            ps_db = librosa.power_to_db(mel, ref=np.max).reshape((*self.dim, 1))
-            X[i,] = (ps_db - np.mean(ps_db))/np.var(ps_db)
+            if self.feat == 'melspec':
+                mel = librosa.feature.melspectrogram(waveform, sr=16000)
+                ps_db = librosa.power_to_db(mel, ref=np.max).reshape((*self.dim, 1))
+                X[i,] = (ps_db - np.mean(ps_db))/np.var(ps_db)
+            elif self.feat == 'mfcc':
+                feat_item = mfcc(waveform+1e-9, maxfreq=sr/2.0, nwin=.128, shift=.032)[0]
+                feat_delta1 = compute_delta(feat_item)
+                feat_delta2 = compute_delta(feat_delta1)
+                feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1).T.reshape((*self.dim, 1))
+                X[i,] = (feat - np.mean(feat))/np.var(feat)
+            elif self.feat == 'plp':
+                feat_item = plp(waveform+1e-9, fs=sr, rasta=False, nwin=.128, shift=.032)[0]
+                feat_delta1 = compute_delta(feat_item)
+                feat_delta2 = compute_delta(feat_delta1)
+                feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1).T.reshape((*self.dim, 1))
+                X[i,] = (feat - np.mean(feat))/np.var(feat)
+            elif self.feat == 'combined':
+                mel = librosa.feature.melspectrogram(waveform, sr=16000)
+                ps_db = librosa.power_to_db(mel, ref=np.max).reshape((*self.dim2, 1))
+                X2[i,] = (ps_db - np.mean(ps_db))/np.var(ps_db)
+                feat_item = mfcc(waveform+1e-9, maxfreq=sr/2.0, nwin=.128, shift=.032)[0]
+                feat_delta1 = compute_delta(feat_item)
+                feat_delta2 = compute_delta(feat_delta1)
+                feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1).T.reshape((*self.dim1, 1))
+                X1[i,] = (feat - np.mean(feat))/np.var(feat)
             # Store class
             label = item_path.split('/')[-3]
             labels.append(item_path)
             y[i] = self.target_to_class[label]
 
         target = keras.utils.to_categorical(y, num_classes=self.n_classes)
+        if self.feat == 'combined':
+            return (X1, X2), target
         return X, target
     
     def __data_generation_dnn(self, item_path):
