@@ -22,14 +22,14 @@ class CNNSpectMFCC(tf.keras.Model):
                                    use_bias=True,
                                    strides=1,
                                    padding='same',
-                                   input_shape=self.input_dims)
+                                   input_shape=self.input_dims[0])
         self.conv_step1_2 = Conv2D(filters=self.n_filters[0],
                                    kernel_size=self.filters_size[0],
                                    activation='relu',
                                    use_bias=True,
                                    strides=1,
                                    padding='same',
-                                   input_shape=self.input_dims)
+                                   input_shape=self.input_dims[1])
         self.batch_norm_step1_1 = BatchNormalization()
         self.batch_norm_step1_2 = BatchNormalization()
         self.max_pooling_step1_1 = MaxPooling2D(pool_size=self.pool_size_2d,
@@ -78,11 +78,17 @@ class CNNSpectMFCC(tf.keras.Model):
             x1 = self.batch_norm_step2_1(x1)
             x2 = self.batch_norm_step2_2(x2)
 
-        prev_layer_shape_1 = x1.output_shape
-        prev_layer_shape_2 = x2.output_shape
+
+        prev_layer_shape_1 = x1.shape
+
+        prev_layer_shape_2 = x1.shape
 
         pool_size_1d_1 = prev_layer_shape_1[1] // self.divide_pool_size_1d
         pool_size_1d_2 = prev_layer_shape_2[1] // self.divide_pool_size_1d
+
+        print("#####", pool_size_1d_1)
+        print("#####", pool_size_1d_2)
+
 
         x1 = MaxPooling2D(pool_size=(pool_size_1d_1, prev_layer_shape_1[2]))(x1)
         x2 = MaxPooling2D(pool_size=(pool_size_1d_2, prev_layer_shape_2[2]))(x2)
