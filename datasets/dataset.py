@@ -8,13 +8,14 @@ from sidekit.frontend.features import plp, compute_delta, mfcc
 
 class DataGenerator(keras.utils.Sequence):
 
-    def __init__(self, root_path, batch_size=32, shuffle=True, net='cnn', feat='melspec'):
+    def __init__(self, root_path, batch_size=32, shuffle=True, net='cnn', feat='melspec', precomputed=False):
 
         self.batch_size = batch_size
         self.root_path = root_path
         self.shuffle = shuffle
         self.list_dir = []
         self.net = net
+        self.precomputed = precomputed
         if self.net == 'dnn':
             self.batch_size = 75
         self.feat = feat
