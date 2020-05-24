@@ -138,31 +138,44 @@ class DataGenerator(keras.utils.Sequence):
             return (X1, X2), target
         return X, target
     
-    def __data_generation_dnn(self, item_path):
+    def __data_generation_dnn(self, list_dirs_temp):
 
         # Initialization
         X = np.empty((self.batch_size, 39*21))
+        target = np.empty((self.batch_size, 8))
+        for i, item_path in enumerate(list_dirs_temp):
+            if self.feat=='mfcc':
+                if self.precomputed:
+                    feat = np.load(item_path)[:,:,0].T
+                else:
+                    waveform, sr = sf.read(item_path)
+                    feat_item = mfcc(waveform+1e-9, maxfreq=sr/2.0, nwin=.128, shift=.032)[0]
+                    feat_delta1 = compute_delta(feat_item)
+                    feat_delta2 = compute_delta(feat_delta1)
+                    feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1)
+            else:
+                if self.precomputed:
+                    feat = np.load(item_path)[:,:,0].T
+                else:
+                    waveform, sr = sf.read(item_path)
+                    feat_item = plp(waveform+1e-9, fs=sr, rasta=False, nwin=.128, shift=.032)[0]
+                    feat_delta1 = compute_delta(feat_item)
+                    feat_delta2 = compute_delta(feat_delta1)
+                    feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1)
 
-        waveform, sr = sf.read(item_path)
-        if self.feat=='mfcc':
-            feat_item = mfcc(waveform+1e-9, maxfreq=sr/2.0)[0]
-        else:
-            feat_item = plp(waveform+1e-9, fs=sr, rasta=False)[0]
-        
-        feat_delta1 = compute_delta(feat_item)
-        feat_delta2 = compute_delta(feat_delta1)
-        feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1)
-        
-        mirror_feat = np.pad(feat, ((10,), (0,)), 'reflect')
-        frames = []
-        for i in range(10, mirror_feat.shape[0] - 10):
-            frames.append(np.reshape(mirror_feat[i-10:i+11,:], -1))
-        X = np.array(frames)
-        # Store class
-        label = item_path.split('/')[-3]
-        
-        target = keras.utils.to_categorical(self.target_to_class[label], num_classes=self.n_classes)
-        target = np.repeat(target.reshape((1,-1)),repeats=self.batch_size, axis=0)
+
+
+            mirror_feat = np.pad(feat, ((10,), (0,)), 'reflect')
+            frames = []
+            for j in range(10 + i*25, 10 + (i+1)*25):
+                frames.append(np.reshape(mirror_feat[j-10:j+11,:], -1))
+            X[25*i:25*(i+1),] = np.array(frames)
+
+            # Store class
+            label = item_path.split('/')[-3]
+
+            target_i = keras.utils.to_categorical(self.target_to_class[label], num_classes=self.n_classes)
+            target[25*i:25*(i+1),:] = np.repeat(target_i.reshape((1,-1)),repeats=25, axis=0)
         return X, target
 
     def __data_generation_lstm(self, item_path):
