@@ -9,7 +9,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import BatchNormalization
 import numpy as np
-from models import utils
 
 class DNN:  
     
