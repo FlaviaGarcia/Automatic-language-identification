@@ -68,7 +68,11 @@ class DataGenerator(keras.utils.Sequence):
             # Generate data
             X, y = self.__data_generation_cnn(list_dirs_temp)
         elif (self.net == 'dnn'):
-            X, y = self.__data_generation_dnn(self.list_dir[self.indexes[index]])
+            pos = index%3
+            start = index - pos
+            indexes = np.roll(self.indexes[start:start+3], pos)
+            list_dirs_temp = [self.list_dir[k] for k in indexes]
+            X, y = self.__data_generation_dnn(list_dirs_temp)
         elif (self.net == 'lstm'):
             X, y = self.__data_generation_lstm(self.list_dir[self.indexes[index]])
 
