@@ -92,24 +92,33 @@ class DataGenerator(keras.utils.Sequence):
         labels = []
         for i, item_path in enumerate(list_dirs_temp):
 
-            waveform, sr = sf.read(item_path)
             if self.feat == 'melspec':
+                waveform, sr = sf.read(item_path)
                 mel = librosa.feature.melspectrogram(waveform, sr=16000)
                 ps_db = librosa.power_to_db(mel, ref=np.max).reshape((*self.dim, 1))
                 X[i,] = (ps_db - np.mean(ps_db))/np.var(ps_db)
             elif self.feat == 'mfcc':
-                feat_item = mfcc(waveform+1e-9, maxfreq=sr/2.0, nwin=.128, shift=.032)[0]
-                feat_delta1 = compute_delta(feat_item)
-                feat_delta2 = compute_delta(feat_delta1)
-                feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1).T.reshape((*self.dim, 1))
-                X[i,] = (feat - np.mean(feat))/np.var(feat)
+                if self.precomputed:
+                    X[i,] = np.load(item_path)
+                else:
+                    waveform, sr = sf.read(item_path)
+                    feat_item = mfcc(waveform+1e-9, maxfreq=sr/2.0, nwin=.128, shift=.032)[0]
+                    feat_delta1 = compute_delta(feat_item)
+                    feat_delta2 = compute_delta(feat_delta1)
+                    feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1).T.reshape((*self.dim, 1))
+                    X[i,] = (feat - np.mean(feat))/np.var(feat)
             elif self.feat == 'plp':
-                feat_item = plp(waveform+1e-9, fs=sr, rasta=False, nwin=.128, shift=.032)[0]
-                feat_delta1 = compute_delta(feat_item)
-                feat_delta2 = compute_delta(feat_delta1)
-                feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1).T.reshape((*self.dim, 1))
-                X[i,] = (feat - np.mean(feat))/np.var(feat)
+                if self.precomputed:
+                    X[i,] = np.load(item_path)
+                else:
+                    waveform, sr = sf.read(item_path)
+                    feat_item = plp(waveform+1e-9, fs=sr, rasta=False, nwin=.128, shift=.032)[0]
+                    feat_delta1 = compute_delta(feat_item)
+                    feat_delta2 = compute_delta(feat_delta1)
+                    feat = np.concatenate((feat_item, feat_delta1, feat_delta2), axis=1).T.reshape((*self.dim, 1))
+                    X[i,] = (feat - np.mean(feat))/np.var(feat)
             elif self.feat == 'combined':
+                waveform, sr = sf.read(item_path)
                 mel = librosa.feature.melspectrogram(waveform, sr=16000)
                 ps_db = librosa.power_to_db(mel, ref=np.max).reshape((*self.dim2, 1))
                 X2[i,] = (ps_db - np.mean(ps_db))/np.var(ps_db)
